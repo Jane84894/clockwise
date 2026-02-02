@@ -56,15 +56,15 @@ const char SETTINGS_PAGE[] PROGMEM = R""""(
     </div>
   </div>
   <script>
-    // 语言包定义
+    // Language pack definition
     const i18n = {
       en: {
-        // 页面标题和导航
+        // Page title and navigation
         title: "Clockwise Settings",
         restart: "Restart",
         saved: "Saved! Restart your device",
         
-        // 配置项翻译
+        // Configuration items translation
         displayBright: {
           title: "Display Bright",
           description: "0 = dark (display off) / 255 = super bright | Value: <strong><output id='rangevalue'>{{value}}</output></strong>",
@@ -146,12 +146,12 @@ const char SETTINGS_PAGE[] PROGMEM = R""""(
       },
       
       zh: {
-        // 页面标题和导航
+        // Page title and navigation
         title: "Clockwise 设置",
         restart: "重启",
         saved: "已保存！请重启设备",
         
-        // 配置项翻译
+        // Configuration items translation
         displayBright: {
           title: "显示亮度",
           description: "0 = 最暗（关闭显示）/ 255 = 最亮 | 当前值: <strong><output id='rangevalue'>{{value}}</output></strong>",
@@ -233,10 +233,10 @@ const char SETTINGS_PAGE[] PROGMEM = R""""(
       }
     };
 
-    // 语言管理
+    // Language management
     let currentLang = localStorage.getItem('lang') || 'en';
 
-    // 获取翻译文本
+    // Get translation text
     function t(key) {
       const keys = key.split('.');
       let value = i18n[currentLang];
@@ -250,7 +250,7 @@ const char SETTINGS_PAGE[] PROGMEM = R""""(
       return value || key;
     }
 
-    // 切换语言
+    // Toggle language
     function toggleLanguage() {
       currentLang = currentLang === 'en' ? 'zh' : 'en';
       localStorage.setItem('lang', currentLang);
@@ -266,7 +266,7 @@ const char SETTINGS_PAGE[] PROGMEM = R""""(
       });
     }
 
-    // 页面加载时初始化语言
+    // Initialize language on page load
     function initLanguage() {
       document.title = t('title');
       document.getElementById('lang-btn').textContent = currentLang === 'en' ? '中文' : 'English';
@@ -404,7 +404,7 @@ const char SETTINGS_PAGE[] PROGMEM = R""""(
 
       var base = document.querySelector('#base');
       
-      // 清除旧的卡片（保留base模板）
+      // Clear old cards (keep base template)
       var container = base.parentElement;
       var oldCards = container.querySelectorAll('.w3-col[id$="-card"]');
       oldCards.forEach(card => card.remove());
