@@ -439,7 +439,7 @@ const char SETTINGS_PAGE[] PROGMEM = R""""(
       xhr.onreadystatechange = function () {
         if (this.readyState == 4 && this.status >= 200 && this.status < 299) {
           document.getElementById('status').style.display = 'block';
-          document.getElementById('status-text').innerHTML = `<i class='fa fa-floppy-o'></i> ${t('saved')}`;
+          document.getElementById('status-text').textContent = t('saved');
         }
       };
       xhr.open('POST', '/set?' + key + '=' + value);
@@ -494,7 +494,7 @@ const char SETTINGS_PAGE[] PROGMEM = R""""(
       const xhr = new XMLHttpRequest();
       xhr.open('POST', '/restart');
       xhr.send();
-      document.getElementById('status').innerHTML = `<i class='fa fa-floppy-o'></i> ${t('saved')}`;
+      document.getElementById('status-text').textContent = t('saved');
       document.getElementById('status').style.display = 'block';
       setTimeout(() => {
         document.getElementById('status').style.display = 'none';
