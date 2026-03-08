@@ -7,12 +7,15 @@
 const char SETTINGS_PAGE[] PROGMEM = R""""(
 <!DOCTYPE html>
 <html>
+<head>
+<meta charset="UTF-8">
 <title>Clockwise Settings</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 <link rel="shortcut icon" type="image/x-icon"
   href="https://github.com/jnthas/clockwise/raw/gh-pages/static/images/favicon.png">
+</head>
 
 <body>
   <div class="w3-container" style="background-image: linear-gradient(120deg, #155799, #159957);">
@@ -24,8 +27,11 @@ const char SETTINGS_PAGE[] PROGMEM = R""""(
   <div class="w3-bar w3-black w3-medium">
     <div id="fw-version" class="w3-bar-item w3-black w3-hover-red"></div>
     <div id="ssid" class="w3-bar-item w3-hover-blue w3-right"></div>
-    <div class="w3-bar-item w3-button w3-hover-yellow w3-right" onclick="restartDevice();"><i class='fa fa-power-off'></i> Restart</div>
-    <div id="status" class="w3-bar-item w3-green" style="display:none"><i class='fa fa-floppy-o'></i> Saved! Restart your device</div>
+    <div class="w3-bar-item w3-button w3-hover-yellow w3-right" onclick="restartDevice();"><i class='fa fa-power-off'></i> <span id="restart-btn">Restart</span></div>
+    <div id="status" class="w3-bar-item w3-green" style="display:none"><i class='fa fa-floppy-o'></i> <span id="status-text">Saved! Restart your device</span></div>
+    <div class="w3-bar-item w3-button w3-hover-yellow w3-right" onclick="toggleLanguage();">
+      <i class='fa fa-language'></i> <span id="lang-btn">中文</span>
+    </div>
   </div>
 
   <div class="w3-row-padding w3-padding">
@@ -45,82 +51,412 @@ const char SETTINGS_PAGE[] PROGMEM = R""""(
             </div>
           </div>
         </div>
-        <button id="cardButton" class="w3-button w3-block w3-light-blue">Save</button>
+        <button id="cardButton" class="w3-button w3-block w3-light-blue">{{SAVE_BUTTON}}</button>
       </div>
     </div>
   </div>
   <script>
-    function createCards(settings) {
-      console.log(settings);
+    // Language pack definition
+    const i18n = {
+      en: {
+        // Page title and navigation
+        title: "Clockwise Settings",
+        restart: "Restart",
+        saved: "Saved! Restart your device",
+        
+        // Configuration items translation
+        displayBright: {
+          title: "Display Bright",
+          description: "0 = dark (display off) / 255 = super bright | Value: <strong><output id='rangevalue'>{{value}}</output></strong>",
+          save: "Save"
+        },
+        use24hFormat: {
+          title: "Use 24h format?",
+          description: "Changes the hour format to show 20:00 instead of 8:00PM",
+          save: "Save"
+        },
+        swapBlueGreen: {
+          title: "Swap Blue/Green pins?",
+          description: "Swap Blue and Green pins because the panel is RBG instead of RGB",
+          save: "Save"
+        },
+        swapBlueRed: {
+          title: "Swap Blue/Red pins?",
+          description: "Swap Blue and Red pins",
+          save: "Save"
+        },
+        timeZone: {
+          title: "Timezone",
+          description: "Consult your TZ identifier <a href='https://en.wikipedia.org/wiki/List_of_tz_database_time_zones'>here.</a> Examples: America/Sao_Paulo, Europe/Lisbon",
+          save: "Save"
+        },
+        ntpServer: {
+          title: "NTP Server",
+          description: "Configure your prefered NTP Server. You can use one of the <a href='https://www.ntppool.org'>NTP Pool Project</a> pools or a local one.",
+          save: "Save"
+        },
+        autoBright: {
+          title: "Automatic Bright",
+          description: "Inform the values read by the LDR when the room is dark (min value) and bright (max value). Range 0 - 4095",
+          save: "Save"
+        },
+        ldrPin: {
+          title: "LDR Pin",
+          description: "The GPIO pin where the LDR is connected to. Use just the numeric value (default: 35) | <a href='#' onclick='readPin(ldrPin.value);'>Read Pin: </a><strong id='ldrPinRead'>0</strong>",
+          save: "Save"
+        },
+        canvasFile: {
+          title: "[Canvas] Description file",
+          description: "Name of the description file to be rendered without extension.",
+          save: "Save",
+          exclusive: "cw-cf-0x07"
+        },
+        canvasServer: {
+          title: "[Canvas] Server Address",
+          description: "Server address where the description files are located. Change this to test it locally.",
+          save: "Save",
+          exclusive: "cw-cf-0x07"
+        },
+        manualPosix: {
+          title: "Posix Timezone String",
+          description: "To avoid remote lookups, provide a Posix string that corresponds to your timezone. Leave empty to obtain this automatically from the server. <a href=\"https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv\">Click here for a list.</a>",
+          save: "Save"
+        },
+        displayRotation: {
+          title: "Rotation",
+          description: "Rotation of the matrix display.",
+          save: "Save"
+        },
+        driver: {
+          title: "Matrix Shift Driver",
+          description: "Hardware-specific chips used to drive matrix modules (default: SHIFTREG).",
+          save: "Save"
+        },
+        i2cSpeed: {
+          title: "I2C Speed",
+          description: "I2S clock speed selector (default: HZ_8M).",
+          save: "Save"
+        },
+        ePin: {
+          title: "E Pin",
+          description: "E pin is Address Line E used for 64-row LED panels to select specific rows (default: 18).",
+          save: "Save"
+        },
+        yep: "Yep"
+      },
+      
+      zh: {
+        // Page title and navigation
+        title: "Clockwise 设置",
+        restart: "重启",
+        saved: "已保存！请重启设备",
+        
+        // Configuration items translation
+        displayBright: {
+          title: "显示亮度",
+          description: "0 = 最暗（关闭显示）/ 255 = 最亮 | 当前值: <strong><output id='rangevalue'>{{value}}</output></strong>",
+          save: "保存"
+        },
+        use24hFormat: {
+          title: "使用24小时制？",
+          description: "将时间格式从 8:00PM 改为 20:00",
+          save: "保存"
+        },
+        swapBlueGreen: {
+          title: "交换蓝/绿引脚？",
+          description: "交换蓝色和绿色引脚，因为面板是RBG而不是RGB",
+          save: "保存"
+        },
+        swapBlueRed: {
+          title: "交换蓝/红引脚？",
+          description: "交换蓝色和红色引脚",
+          save: "保存"
+        },
+        timeZone: {
+          title: "时区",
+          description: "参考您的时区标识符 <a href='https://en.wikipedia.org/wiki/List_of_tz_database_time_zones'>这里。</a> 示例: America/Sao_Paulo, Europe/Lisbon",
+          save: "保存"
+        },
+        ntpServer: {
+          title: "NTP 服务器",
+          description: "配置您偏好的NTP服务器。您可以使用 <a href='https://www.ntppool.org'>NTP Pool Project</a> 的服务器池或本地服务器。",
+          save: "保存"
+        },
+        autoBright: {
+          title: "自动亮度",
+          description: "告知LDR在房间黑暗（最小值）和明亮（最大值）时读取的数值。范围 0 - 4095",
+          save: "保存"
+        },
+        ldrPin: {
+          title: "LDR 引脚",
+          description: "LDR连接的GPIO引脚。仅使用数字值（默认：35） | <a href='#' onclick='readPin(ldrPin.value);'>读取引脚: </a><strong id='ldrPinRead'>0</strong>",
+          save: "保存"
+        },
+        canvasFile: {
+          title: "[Canvas] 描述文件",
+          description: "要渲染的描述文件名称（不带扩展名）。",
+          save: "保存",
+          exclusive: "cw-cf-0x07"
+        },
+        canvasServer: {
+          title: "[Canvas] 服务器地址",
+          description: "描述文件所在的服务器地址。修改此地址进行本地测试。",
+          save: "保存",
+          exclusive: "cw-cf-0x07"
+        },
+        manualPosix: {
+          title: "Posix 时区字符串",
+          description: "为了避免远程查询，提供与您时区对应的Posix字符串。留空将自动从服务器获取。<a href=\"https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv\">点击这里查看列表。</a>",
+          save: "保存"
+        },
+        displayRotation: {
+          title: "旋转",
+          description: "矩阵显示屏的旋转角度。",
+          save: "保存"
+        },
+        driver: {
+          title: "矩阵移位驱动器",
+          description: "用于驱动矩阵模块的特定硬件芯片（默认：SHIFTREG）。",
+          save: "保存"
+        },
+        i2cSpeed: {
+          title: "I2C 速度",
+          description: "I2S时钟速度选择器（默认：HZ_8M）。",
+          save: "保存"
+        },
+        ePin: {
+          title: "E 引脚",
+          description: "E引脚是用于64行LED面板的地址线E，用于选择特定行（默认：18）。",
+          save: "保存"
+        },
+        yep: "是"
+      }
+    };
+
+    // Language management
+    let currentLang = localStorage.getItem('lang') || getInitialLanguage();
+
+    // Get initial language - auto-detect browser language
+    function getInitialLanguage() {
+      try {
+        const browserLang = navigator.language || navigator.userLanguage;
+        if (browserLang && browserLang.startsWith('zh')) {
+          return 'zh';  // Auto-detect Chinese users
+        }
+      } catch (e) {
+        console.warn('Failed to detect browser language:', e);
+      }
+      return 'en';  // Default to English
+    }
+
+    // Get translation text with error handling
+    function t(key, defaultText = '') {
+      try {
+        if (!key || typeof key !== 'string') {
+          console.warn('Invalid translation key:', key);
+          return defaultText || '';
+        }
+        
+        const keys = key.split('.');
+        let value = i18n[currentLang];
+        
+        if (!value) {
+          console.warn('Language not found, fallback to English:', currentLang);
+          value = i18n['en'];
+        }
+        
+        for (let k of keys) {
+          if (value && typeof value === 'object') {
+            value = value[k];
+          } else {
+            console.warn('Translation key not found:', key);
+            return defaultText || key;
+          }
+        }
+        return value !== undefined ? value : (defaultText || key);
+      } catch (e) {
+        console.error('Translation error for key:', key, e);
+        return defaultText || key;
+      }
+    }
+
+    // Validate translations - check if all English keys have Chinese translations
+    function validateTranslations() {
+      try {
+        const enKeys = getAllKeys(i18n.en);
+        const zhKeys = getAllKeys(i18n.zh);
+        
+        const missing = enKeys.filter(key => !zhKeys.includes(key));
+        if (missing.length > 0) {
+          console.warn('Missing Chinese translations:', missing);
+        }
+        
+        const extra = zhKeys.filter(key => !enKeys.includes(key));
+        if (extra.length > 0) {
+          console.info('Extra Chinese keys (may be intentional):', extra);
+        }
+        
+        return { missing, extra };
+      } catch (e) {
+        console.error('Translation validation error:', e);
+        return { missing: [], extra: [] };
+      }
+    }
+
+    // Helper function to get all nested keys from an object
+    function getAllKeys(obj, prefix = '') {
+      const keys = [];
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          const fullKey = prefix ? `${prefix}.${key}` : key;
+          if (typeof obj[key] === 'object' && obj[key] !== null) {
+            keys.push(...getAllKeys(obj[key], fullKey));
+          } else {
+            keys.push(fullKey);
+          }
+        }
+      }
+      return keys;
+    }
+
+    // Toggle language with animation
+    function toggleLanguage() {
+      try {
+        const newLang = currentLang === 'en' ? 'zh' : 'en';
+        
+        // Add fade-out animation
+        document.body.style.transition = 'opacity 0.3s ease';
+        document.body.style.opacity = '0';
+        
+        setTimeout(() => {
+          currentLang = newLang;
+          localStorage.setItem('lang', currentLang);
+          
+          console.log('Language switched to:', currentLang);
+          
+          // Update UI texts
+          document.getElementById('lang-btn').textContent = currentLang === 'en' ? '中文' : 'English';
+          document.getElementById('restart-btn').textContent = t('restart');
+          document.getElementById('status-text').textContent = t('saved');
+          
+          // Refresh cards with new language
+          requestGet("/get", (req) => {
+            createCards(splitHeaders(req));
+            document.body.style.opacity = '1';
+          });
+        }, 300);
+      } catch (e) {
+        console.error('Error toggling language:', e);
+        // Fallback: direct switch without animation
+        currentLang = currentLang === 'en' ? 'zh' : 'en';
+        localStorage.setItem('lang', currentLang);
+        location.reload();
+      }
+    }
+
+    // Initialize language on page load
+    function initLanguage() {
+      try {
+        document.title = t('title');
+        document.getElementById('lang-btn').textContent = currentLang === 'en' ? '中文' : 'English';
+        document.getElementById('restart-btn').textContent = t('restart');
+        document.getElementById('status-text').textContent = t('saved');
+        
+        // Save initial language preference
+        if (!localStorage.getItem('lang')) {
+          localStorage.setItem('lang', currentLang);
+          console.log('Initial language set to:', currentLang, '(auto-detected)');
+        }
+        
+        // Validate translations in development mode
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          validateTranslations();
+        }
+      } catch (e) {
+        console.error('Error initializing language:', e);
+      }
+    }
+
+    // Add keyboard shortcut for language toggle (Ctrl+L)
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'l') {
+        e.preventDefault();
+        toggleLanguage();
+      }
+    });
+
+
+        function createCards(settings) {
+      console.log('Creating cards with settings:', settings);
       const cards = [
         {
-          title: "Display Bright",
-          description: "0 = dark (display off) / 255 = super bright | Value: <strong><output id='rangevalue'>" + settings.displaybright + "</output></strong>",
+          title: t('displayBright.title'),
+          description: t('displayBright.description').replace('{{value}}', settings.displaybright),
           formInput: "<input class='w3-input w3-border' type='range' min='0' max='255' value='" + settings.displaybright + "' class='slider' id='bright' oninput='rangevalue.value=value'>",
           icon: "fa-adjust",
           save: "updatePreference('displayBright', bright.value)",
           property: "displayBright"
         },
         {
-          title: "Use 24h format?",
-          description: "Changes the hour format to show 20:00 instead of 8:00PM",
-          formInput: "<input class='w3-check' type='checkbox' id='use24h' " + (settings.use24hformat == '1' ? "checked" : "") + "><label for='use24h'> Yep</label>",
+          title: t('use24hFormat.title'),
+          description: t('use24hFormat.description'),
+          formInput: "<input class='w3-check' type='checkbox' id='use24h' " + (settings.use24hformat == '1' ? "checked" : "") + "><label for='use24h'> " + t('yep') + "</label>",
           icon: "fa-clock-o",
           save: "updatePreference('use24hFormat', Number(use24h.checked))",
           property: "use24hFormat"
         },
         {
-          title: "Swap Blue/Green pins?",
-          description: "Swap Blue and Green pins because the panel is RBG instead of RGB",
-          formInput: "<input class='w3-check' type='checkbox' id='swapBG' " + (settings.swapbluegreen == '1' ? "checked" : "") + "><label for='swapBG'> Yep</label>",
+          title: t('swapBlueGreen.title'),
+          description: t('swapBlueGreen.description'),
+          formInput: "<input class='w3-check' type='checkbox' id='swapBG' " + (settings.swapbluegreen == '1' ? "checked" : "") + "><label for='swapBG'> " + t('yep') + "</label>",
           icon: "fa-random",
           save: "updatePreference('swapBlueGreen', Number(swapBG.checked))",
           property: "swapBlueGreen"
         },
         {
-          title: "Swap Blue/Red pins?",
-          description: "Swap Blue and Red pins",
-          formInput: "<input class='w3-check' type='checkbox' id='swapBR' " + (settings.swapbluered == '1' ? "checked" : "") + "><label for='swapBR'> Yep</label>",
+          title: t('swapBlueRed.title'),
+          description: t('swapBlueRed.description'),
+          formInput: "<input class='w3-check' type='checkbox' id='swapBR' " + (settings.swapbluered == '1' ? "checked" : "") + "><label for='swapBR'> " + t('yep') + "</label>",
           icon: "fa-random",
           save: "updatePreference('swapBlueRed', Number(swapBR.checked))",
           property: "swapBlueRed"
-        },        
+        },
         {
-          title: "Timezone",
-          description: "Consult your TZ identifier <a href='https://en.wikipedia.org/wiki/List_of_tz_database_time_zones'>here.</a> Examples: America/Sao_Paulo, Europe/Lisbon",
+          title: t('timeZone.title'),
+          description: t('timeZone.description'),
           formInput: "<input id='tz' class='w3-input w3-light-grey' name='tz' type='text' placeholder='Timezone' value='" + settings.timezone + "'>",
           icon: "fa-globe",
           save: "updatePreference('timeZone', tz.value)",
           property: "timeZone"
         },
         {
-          title: "NTP Server",
-          description: "Configure your prefered NTP Server. You can use one of the <a href='https://www.ntppool.org'>NTP Pool Project</a> pools or a local one.",
+          title: t('ntpServer.title'),
+          description: t('ntpServer.description'),
           formInput: "<input id='ntp' class='w3-input w3-light-grey' name='ntp' type='text' placeholder='NTP Server' value='" + settings.ntpserver + "'>",
           icon: "fa-server",
           save: "updatePreference('ntpServer', ntp.value)",
           property: "ntpServer"
         },
         {
-          title: "Automatic Bright",
-          description: "Inform the values read by the LDR when the room is dark (min value) and bright (max value). Range 0 - 4095",
-          formInput: "<input id='autoBrightMin' class='w3-input w3-light-grey w3-cell w3-margin-right' name='autoBrightMin' style='width:45%;' type='number' min='0' max='4095' placeholder='Min value' value='" + settings.autobrightmin + "'>" + 
+          title: t('autoBright.title'),
+          description: t('autoBright.description'),
+          formInput: "<input id='autoBrightMin' class='w3-input w3-light-grey w3-cell w3-margin-right' name='autoBrightMin' style='width:45%;' type='number' min='0' max='4095' placeholder='Min value' value='" + settings.autobrightmin + "'>" +
                      "<input id='autoBrightMax' class='w3-input w3-light-grey w3-cell' name='autoBrightMax' style='width:45%;' type='number' min='0' max='4095' placeholder='Max value' value='" + settings.autobrightmax + "'>",
           icon: "fa-sun-o",
           save: "updatePreference('autoBright', autoBrightMin.value.padStart(4, '0') + ',' + autoBrightMax.value.padStart(4, '0'))",
           property: "autoBright"
         },
         {
-          title: "LDR Pin",
-          description: "The GPIO pin where the LDR is connected to. Use just the numeric value (default: 35) | <a href='#' onclick='readPin(ldrPin.value);'>Read Pin: </a><strong id='ldrPinRead'>0</strong>",
+          title: t('ldrPin.title'),
+          description: t('ldrPin.description'),
           formInput: "<input id='ldrPin' class='w3-input w3-light-grey' name='ldrPin' type='number' min='0' max='39' value='" + settings.ldrpin + "'>",
           icon: "fa-microchip",
           save: "updatePreference('ldrPin', ldrPin.value)",
           property: "ldrPin"
         },
         {
-          title: "[Canvas] Description file",
-          description: "Name of the description file to be rendered without extension.",
+          title: t('canvasFile.title'),
+          description: t('canvasFile.description'),
           formInput: "<input id='descFile' class='w3-input w3-light-grey' name='descFile' type='text' placeholder='Description File' value='" + settings.canvasfile + "'>",
           icon: "fa-file-image-o",
           save: "updatePreference('canvasFile', descFile.value)",
@@ -128,8 +464,8 @@ const char SETTINGS_PAGE[] PROGMEM = R""""(
           exclusive: "cw-cf-0x07"
         },
         {
-          title: "[Canvas] Server Address",
-          description: "Server address where the description files are located. Change this to test it locally.",
+          title: t('canvasServer.title'),
+          description: t('canvasServer.description'),
           formInput: "<input id='serverAddress' class='w3-input w3-light-grey' name='serverAddress' type='text' placeholder='Canvas Server' value='" + settings.canvasserver + "'>",
           icon: "fa-server",
           save: "updatePreference('canvasServer', serverAddress.value)",
@@ -137,48 +473,54 @@ const char SETTINGS_PAGE[] PROGMEM = R""""(
           exclusive: "cw-cf-0x07"
         },
         {
-          title: "Posix Timezone String",
-          description: "To avoid remote lookups, provide a Posix string that corresponds to your timezone. Leave empty to obtain this automatically from the server. <a href=\"https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv\">Click here for a list.</a>",
+          title: t('manualPosix.title'),
+          description: t('manualPosix.description'),
           formInput: "<input id='posixString' class='w3-input w3-light-grey' name='posixString' type='text' placeholder='Manual Posix String' value='" + settings.manualposix + "'>",
           icon: "fa-globe",
           save: "updatePreference('manualPosix', posixString.value)",
           property: "manualPosix"
         },
         {
-          title: "Rotation",
-          description: "Rotation of the matrix display.",
+          title: t('displayRotation.title'),
+          description: t('displayRotation.description'),
           formInput: "<select name='rotation' id='rotation'><option value='0'" + (settings.displayrotation == 0 ? " selected='selected'" : "") + ">0</option><option value='1'" + (settings.displayrotation == 1 ? " selected='selected'" : "") + ">90</option><option value='2'" + (settings.displayrotation == 2 ? " selected='selected'" : "") + ">180</option><option value='3'" + (settings.displayrotation == 3 ? " selected='selected'" : "") + ">270</option></select>",
           icon: "fa-rotate-right",
           save: "updatePreference('displayRotation', rotation.value)",
           property: "displayRotation"
         },
         {
-          title: "Matrix Shift Driver",
-          description: "Hardware-specific chips used to drive matrix modules (default: SHIFTREG).",
+          title: t('driver.title'),
+          description: t('driver.description'),
           formInput: "<select name='driver' id='driver'><option value='0'" + (settings.driver == 0 ? " selected='selected'" : "") + ">SHIFTREG</option><option value='1'" + (settings.driver == 1 ? " selected='selected'" : "") + ">FM6124</option><option value='2'" + (settings.driver == 2 ? " selected='selected'" : "") + ">FM6126A</option><option value='3'" + (settings.driver == 3 ? " selected='selected'" : "") + ">ICN2038S</option><option value='4'" + (settings.driver == 4 ? " selected='selected'" : "") + ">MBI5124</option><option value='5'" + (settings.driver == 5 ? " selected='selected'" : "") + ">DP3246</option></select>",
           icon: "fa-microchip",
           save: "updatePreference('driver', driver.value)",
           property: "driver"
         },
         {
-          title: "I2C Speed",
-          description: "I2S clock speed selector (default: HZ_8M).",
+          title: t('i2cSpeed.title'),
+          description: t('i2cSpeed.description'),
           formInput: "<select name='speed' id='speed'><option value='8000000'" + (settings.i2cspeed == 8000000 ? " selected='selected'" : "") + ">HZ_8M</option><option value='16000000'" + (settings.i2cspeed == 16000000 ? " selected='selected'" : "") + ">HZ_16M</option><option value='20000000'" + (settings.i2cspeed == 20000000 ? " selected='selected'" : "") + ">HZ_20M</option></select>",
           save: "updatePreference('i2cSpeed', speed.value)",
           icon: "fa-microchip",
           property: "i2cSpeed"
-        },          
+        },
         {
-          title: "E Pin",
-          description: "E pin is Address Line E used for 64-row LED panels to select specific rows (default: 18).",
+          title: t('ePin.title'),
+          description: t('ePin.description'),
           formInput: "<input id='E_pin' class='w3-input w3-light-grey' name='E_pin' type='number' min='0' max='32' value='" + settings.e_pin + "'>",
           icon: "fa-microchip",
           save: "updatePreference('E_pin', E_pin.value)",
-          property: "E_pin"
-        }        
+          property: "ePin"
+        }
       ];
 
       var base = document.querySelector('#base');
+      
+      // Clear old cards (keep base template)
+      var container = base.parentElement;
+      var oldCards = container.querySelectorAll('.w3-col[id$="-card"]');
+      oldCards.forEach(card => card.remove());
+      
       cards.forEach(c => {
 
         if (!c.hasOwnProperty('exclusive') || (c.hasOwnProperty('exclusive') && c.exclusive === settings.clockface_name)) {
@@ -196,6 +538,7 @@ const char SETTINGS_PAGE[] PROGMEM = R""""(
           document.getElementById("formInput-" + c.property).innerHTML = c.formInput
           document.getElementById("icon-" + c.property).classList.add(c.icon);
           document.getElementById("cardButton-" + c.property).setAttribute("onclick", c.save);
+          document.getElementById("cardButton-" + c.property).textContent = t(c.property + '.save');
         }
       })
 
@@ -208,6 +551,7 @@ const char SETTINGS_PAGE[] PROGMEM = R""""(
       xhr.onreadystatechange = function () {
         if (this.readyState == 4 && this.status >= 200 && this.status < 299) {
           document.getElementById('status').style.display = 'block';
+          document.getElementById('status-text').textContent = t('saved');
         }
       };
       xhr.open('POST', '/set?' + key + '=' + value);
@@ -233,8 +577,11 @@ const char SETTINGS_PAGE[] PROGMEM = R""""(
     function requestGet(path, cb) {
       var xmlhttp = new XMLHttpRequest();
       xmlhttp.onreadystatechange = function () {
-        if (this.readyState === 2 && this.status === 204) {
+        if (this.readyState === 4 && (this.status === 200 || this.status === 204)) {
+          console.log('Request completed:', path, 'Status:', this.status);
           cb(this);
+        } else if (this.readyState === 4) {
+          console.error('Request failed:', path, 'Status:', this.status);
         }
       };
       xmlhttp.open("GET", path, true);
@@ -249,15 +596,21 @@ const char SETTINGS_PAGE[] PROGMEM = R""""(
     }
 
     function begin() {
+      initLanguage();
       requestGet("/get", (req) => {
         createCards(splitHeaders(req));
-      });  
+      });
     }
 
     function restartDevice() {
       const xhr = new XMLHttpRequest();
       xhr.open('POST', '/restart');
       xhr.send();
+      document.getElementById('status-text').textContent = t('saved');
+      document.getElementById('status').style.display = 'block';
+      setTimeout(() => {
+        document.getElementById('status').style.display = 'none';
+      }, 2000);
     }
 
     //Local
