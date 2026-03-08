@@ -1,3 +1,41 @@
+# 🇨🇳 Clockwise 中文版
+
+> **智能挂钟 DIY 项目 - 支持中文界面**
+
+[![GitHub forks](https://img.shields.io/github/forks/Jane84894/clockwise?style=flat)](https://github.com/Jane84894/clockwise/network)
+[![GitHub stars](https://img.shields.io/github/stars/Jane84894/clockwise?style=flat)](https://github.com/Jane84894/clockwise/stargazers)
+[![GitHub license](https://img.shields.io/github/license/Jane84894/clockwise)](https://github.com/Jane84894/clockwise/blob/main/LICENSE)
+
+---
+
+## ✨ 中文版本特色
+
+本仓库是 [jnthas/clockwise](https://github.com/jnthas/clockwise) 的**中文本地化版本**，在原版基础上添加了以下改进：
+
+### 🎯 新增功能
+
+- ✅ **中文语言支持** - Web 设置界面支持中英文切换
+- ✅ **国际化 (i18n)** - 完整的语言切换功能
+- ✅ **代码规范化** - 翻译代码注释为英文
+- ✅ **UI 优化** - 改进用户界面体验
+
+### 📦 与原版对比
+
+| 特性 | 原版 | 中文版 |
+|------|------|--------|
+| **Web 界面语言** | 仅英文 | ✅ 英文 + 中文 |
+| **语言切换** | ❌ 不支持 | ✅ 支持 |
+| **代码注释** | 混合 | ✅ 统一英文 |
+| **分支** | `main` | `cn-version` |
+
+### 🚀 快速体验
+
+访问 [https://clockwise.page](https://clockwise.page) 在线烧录固件，然后在设置界面切换语言！
+
+---
+
+## 📖 原版项目介绍
+
 ![News GIF](https://github.com/jnthas/clockwise/raw/gh-pages/static/images/news.gif) **[Latest version 1.4.2 released!](https://github.com/jnthas/clockwise/releases/tag/v1.4.2)** | [See full change log](https://github.com/jnthas/clockwise/blob/main/CHANGELOG.md#142---2024-04-21)
 
 ![Clockwise Logo](https://github.com/jnthas/clockwise/blob/gh-pages/static/images/clockwise_logo.png "Clockwise Logo")
@@ -60,41 +98,92 @@ Mario Bros | Words | World Map | Castlevania | Pacman | Pokedex | Canvas
 
 ---
 
-## How to Build
+## 🇨🇳 中文使用说明
 
-You can start developing and customizing Clockwise in two different ways:
+### 切换语言步骤
 
-1. **PlatformIO** — advanced usage for developers  
-2. **ESP-IDF** — for full control  
+1. 打开设备 Web 设置界面
+2. 点击导航栏的 **语言切换按钮** 🌐
+3. 选择 **中文** 或 **English**
+4. 语言偏好会自动保存
 
-👉 [Both are described in the Flashing section of the Wiki](https://github.com/jnthas/clockwise/wiki/%F0%9F%92%BE-Flashing-the-Firmware)
+### 编译固件
 
----
+```bash
+# 克隆中文版仓库
+git clone -b cn-version https://github.com/Jane84894/clockwise.git
+cd clockwise/firmware
 
-## Advanced Configuration
+# 使用 PlatformIO 编译
+pio run -t upload
+```
 
-Clockwise offers a flexible set of options that you can adjust through its built-in Settings page:
+### 中文支持详情
 
-* **WiFi settings** — easily update your network details without reflashing
-* **Timezone & NTP server** — sync the clock accurately for your region
-* **Display brightness** — manual or automatic control (with optional LDR sensor)
-* **Display rotation** — adjust orientation to match your wall setup
-* **Clockface selection** — switch between installed Clockfaces or use Canvas themes
-* **RGB order correction** — fix color mismatch on certain LED matrices
-* **POSIX timezone string** — fine-tune timezone behavior
-
-👉 See the full guide here: [Advanced Configuration Wiki](https://github.com/jnthas/clockwise/wiki/%E2%9A%99%EF%B8%8F-Configuring-Clockwise)
-
----
-
-## Community & Contributions
-
-- Join the [Clock Club](https://github.com/jnthas/clock-club) to create your own Clockfaces
-- Contributions and pull requests are welcome!  
-👉 [Contributing Guide](https://github.com/jnthas/clockwise/wiki/%F0%9F%A4%9D-Contributing)
+- **设置页面** - 完全中文化
+- **状态提示** - 中文显示
+- **错误信息** - 中文显示
+- **语言持久化** - localStorage 保存偏好
 
 ---
 
-## License
+## 🛠️ 开发说明
 
-Clockwise is released under the MIT License.
+### 分支说明
+
+- `main` - 原版代码（与上游同步）
+- `cn-version` - **中文版本**（推荐使用）
+- `gh-pages` - 项目官网
+
+### 贡献代码
+
+欢迎提交 Issue 和 Pull Request！
+
+### 本地化 (i18n)
+
+中文语言支持通过以下方式实现：
+
+```javascript
+// 语言包
+const translations = {
+  zh: { /* 中文翻译 */ },
+  en: { /* English translations */ }
+};
+
+// 切换语言
+function setLanguage(lang) {
+  localStorage.setItem('preferredLanguage', lang);
+  // 更新 UI
+}
+```
+
+---
+
+## 📄 许可证
+
+本项目采用与原版相同的许可证。
+
+- **原版项目**: [jnthas/clockwise](https://github.com/jnthas/clockwise)
+- **原作者**: Jonathas Barbosa
+- **许可证**: 查看 [LICENSE](LICENSE) 文件
+
+---
+
+## 🙏 致谢
+
+- 感谢原作者 [Jonathas Barbosa](https://github.com/jnthas) 创建了这个优秀的开源项目
+- 感谢所有 Clockwise 社区的贡献者
+
+---
+
+## 📬 联系方式
+
+- **项目地址**: https://github.com/Jane84894/clockwise
+- **原版项目**: https://github.com/jnthas/clockwise
+- **在线烧录**: https://clockwise.page
+
+---
+
+**祝你使用愉快！** 🎉
+
+如有问题，请提交 Issue 或联系维护者。
