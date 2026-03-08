@@ -234,47 +234,159 @@ const char SETTINGS_PAGE[] PROGMEM = R""""(
     };
 
     // Language management
-    let currentLang = localStorage.getItem('lang') || 'en';
+    let currentLang = localStorage.getItem('lang') || getInitialLanguage();
 
-    // Get translation text
-    function t(key) {
-      const keys = key.split('.');
-      let value = i18n[currentLang];
-      for (let k of keys) {
-        if (value && typeof value === 'object') {
-          value = value[k];
-        } else {
-          return key;
+    // Get initial language - auto-detect browser language
+    function getInitialLanguage() {
+      try {
+        const browserLang = navigator.language || navigator.userLanguage;
+        if (browserLang && browserLang.startsWith('zh')) {
+          return 'zh';  // Auto-detect Chinese users
         }
+      } catch (e) {
+        console.warn('Failed to detect browser language:', e);
       }
-      return value || key;
+      return 'en';  // Default to English
     }
 
-    // Toggle language
+    // Get translation text with error handling
+    function t(key, defaultText = '') {
+      try {
+        if (!key || typeof key !== 'string') {
+          console.warn('Invalid translation key:', key);
+          return defaultText || '';
+        }
+        
+        const keys = key.split('.');
+        let value = i18n[currentLang];
+        
+        if (!value) {
+          console.warn('Language not found, fallback to English:', currentLang);
+          value = i18n['en'];
+        }
+        
+        for (let k of keys) {
+          if (value && typeof value === 'object') {
+            value = value[k];
+          } else {
+            console.warn('Translation key not found:', key);
+            return defaultText || key;
+          }
+        }
+        return value !== undefined ? value : (defaultText || key);
+      } catch (e) {
+        console.error('Translation error for key:', key, e);
+        return defaultText || key;
+      }
+    }
+
+    // Validate translations - check if all English keys have Chinese translations
+    function validateTranslations() {
+      try {
+        const enKeys = getAllKeys(i18n.en);
+        const zhKeys = getAllKeys(i18n.zh);
+        
+        const missing = enKeys.filter(key => !zhKeys.includes(key));
+        if (missing.length > 0) {
+          console.warn('Missing Chinese translations:', missing);
+        }
+        
+        const extra = zhKeys.filter(key => !enKeys.includes(key));
+        if (extra.length > 0) {
+          console.info('Extra Chinese keys (may be intentional):', extra);
+        }
+        
+        return { missing, extra };
+      } catch (e) {
+        console.error('Translation validation error:', e);
+        return { missing: [], extra: [] };
+      }
+    }
+
+    // Helper function to get all nested keys from an object
+    function getAllKeys(obj, prefix = '') {
+      const keys = [];
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          const fullKey = prefix ? `${prefix}.${key}` : key;
+          if (typeof obj[key] === 'object' && obj[key] !== null) {
+            keys.push(...getAllKeys(obj[key], fullKey));
+          } else {
+            keys.push(fullKey);
+          }
+        }
+      }
+      return keys;
+    }
+
+    // Toggle language with animation
     function toggleLanguage() {
-      currentLang = currentLang === 'en' ? 'zh' : 'en';
-      localStorage.setItem('lang', currentLang);
-      
-      console.log('Language switched to:', currentLang);
-      
-      document.getElementById('lang-btn').textContent = currentLang === 'en' ? '中文' : 'English';
-      document.getElementById('restart-btn').textContent = t('restart');
-      document.getElementById('status-text').textContent = t('saved');
-      
-      requestGet("/get", (req) => {
-        createCards(splitHeaders(req));
-      });
+      try {
+        const newLang = currentLang === 'en' ? 'zh' : 'en';
+        
+        // Add fade-out animation
+        document.body.style.transition = 'opacity 0.3s ease';
+        document.body.style.opacity = '0';
+        
+        setTimeout(() => {
+          currentLang = newLang;
+          localStorage.setItem('lang', currentLang);
+          
+          console.log('Language switched to:', currentLang);
+          
+          // Update UI texts
+          document.getElementById('lang-btn').textContent = currentLang === 'en' ? '中文' : 'English';
+          document.getElementById('restart-btn').textContent = t('restart');
+          document.getElementById('status-text').textContent = t('saved');
+          
+          // Refresh cards with new language
+          requestGet("/get", (req) => {
+            createCards(splitHeaders(req));
+            document.body.style.opacity = '1';
+          });
+        }, 300);
+      } catch (e) {
+        console.error('Error toggling language:', e);
+        // Fallback: direct switch without animation
+        currentLang = currentLang === 'en' ? 'zh' : 'en';
+        localStorage.setItem('lang', currentLang);
+        location.reload();
+      }
     }
 
     // Initialize language on page load
     function initLanguage() {
-      document.title = t('title');
-      document.getElementById('lang-btn').textContent = currentLang === 'en' ? '中文' : 'English';
-      document.getElementById('restart-btn').textContent = t('restart');
-      document.getElementById('status-text').textContent = t('saved');
+      try {
+        document.title = t('title');
+        document.getElementById('lang-btn').textContent = currentLang === 'en' ? '中文' : 'English';
+        document.getElementById('restart-btn').textContent = t('restart');
+        document.getElementById('status-text').textContent = t('saved');
+        
+        // Save initial language preference
+        if (!localStorage.getItem('lang')) {
+          localStorage.setItem('lang', currentLang);
+          console.log('Initial language set to:', currentLang, '(auto-detected)');
+        }
+        
+        // Validate translations in development mode
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          validateTranslations();
+        }
+      } catch (e) {
+        console.error('Error initializing language:', e);
+      }
     }
 
-    function createCards(settings) {
+    // Add keyboard shortcut for language toggle (Ctrl+L)
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'l') {
+        e.preventDefault();
+        toggleLanguage();
+      }
+    });
+
+
+        function createCards(settings) {
       console.log('Creating cards with settings:', settings);
       const cards = [
         {
