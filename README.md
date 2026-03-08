@@ -28,10 +28,6 @@
 | **代码注释** | 混合 | ✅ 统一英文 |
 | **分支** | `main` | `cn-version` |
 
-### 🚀 快速体验
-
-访问 [https://clockwise.page](https://clockwise.page) 在线烧录固件，然后在设置界面切换语言！
-
 ---
 
 ## 📖 原版项目介绍
@@ -64,66 +60,173 @@ To simplify assembly, you can also use the [**WiseShield-32 DIY PCB kit**](https
 
 ---
 
-## Quick Start
+## 🔧 刷写固件（手动方式）
 
-### 1. Required Hardware
+### 方法一：使用 PlatformIO（推荐）⭐
 
-If you want to build it from scratch, you will need at least these components below. Follow the instructions on [Wiki]() to assemble it. 
-- 64x64 RGB LED matrix (HUB75 or HUB75E)
-- ESP32 Dev Board
-- 5V 3A power supply
-- Jumpers
+**步骤 1：安装 PlatformIO**
 
-Alternatively, we created a custom PCB that simplifies this process a lot. The kit includes not only the PCB but all components including sensors to make your clock smarter. Check the [WiseShield-32 PCB kit](https://www.elecrow.com/clockwise-diy-kit.html) out now!
+```bash
+# 安装 VS Code
+# 访问 https://code.visualstudio.com/ 下载并安装
 
-### 2. Flash Firmware
+# 在 VS Code 中安装 PlatformIO 扩展
+# 点击左侧扩展图标 → 搜索 "PlatformIO IDE" → 安装
+```
 
-- Go to: [https://clockwise.page](https://clockwise.page)
-- Follow the on-screen steps to flash Clockwise and configure WiFi
-
-For detailed instructions:  
-👉 [See Wiki: Getting Started](https://github.com/jnthas/clockwise/wiki/%F0%9F%9A%80-Getting-Started)
-
----
-
-## Clockfaces Gallery
-
-You can choose from many creative Clockfaces — or make your own:
-
-Mario Bros | Words | World Map | Castlevania | Pacman | Pokedex | Canvas
-:--:|:--:|:--:|:--:|:--:|:--:|:--:
-[![](https://github.com/jnthas/cw-cf-0x01/blob/main/cf_0x01_thumb.jpg)](https://github.com/jnthas/cw-cf-0x01) | [![](https://github.com/jnthas/cw-cf-0x02/blob/main/cf_0x02_thumb.jpg)](https://github.com/jnthas/cw-cf-0x02) | [![](https://github.com/jnthas/cw-cf-0x03/blob/main/cf_0x03_thumb.jpg)](https://github.com/jnthas/cw-cf-0x03) | [![](https://github.com/jnthas/cw-cf-0x04/blob/main/cf_0x04_thumb.jpg)](https://github.com/jnthas/cw-cf-0x04) | [![](https://github.com/jnthas/cw-cf-0x05/blob/main/cf_0x05_thumb.jpg)](https://github.com/jnthas/cw-cf-0x05) | [![](https://github.com/jnthas/cw-cf-0x06/blob/main/cf_0x06_thumb.jpg)](https://github.com/jnthas/cw-cf-0x06) | [![](https://github.com/jnthas/cw-cf-0x07/raw/main/cf_0x07_thumb.jpg)](https://github.com/jnthas/cw-cf-0x07)
-
-> Canvas is a special type of Clockface that is capable of rendering different themes described in a JSON file. More about **Canvas Clockface**: [Wiki page](https://github.com/jnthas/clockwise/wiki/Canvas-Clockface)
-
----
-
-## 🇨🇳 中文使用说明
-
-### 切换语言步骤
-
-1. 打开设备 Web 设置界面
-2. 点击导航栏的 **语言切换按钮** 🌐
-3. 选择 **中文** 或 **English**
-4. 语言偏好会自动保存
-
-### 编译固件
+**步骤 2：克隆仓库**
 
 ```bash
 # 克隆中文版仓库
 git clone -b cn-version https://github.com/Jane84894/clockwise.git
 cd clockwise/firmware
+```
 
-# 使用 PlatformIO 编译
+**步骤 3：编译并烧录**
+
+```bash
+# 使用 PlatformIO 编译并烧录
+pio run -t upload
+
+# 或者先编译，再烧录
+pio run
+pio run -t upload
+```
+
+**步骤 4：监控串口输出（可选）**
+
+```bash
+# 查看串口输出（波特率：115200）
+pio device monitor --baud 115200
+```
+
+---
+
+### 方法二：使用 ESP-IDF
+
+**步骤 1：安装 ESP-IDF**
+
+```bash
+# 访问 ESP-IDF 安装指南
+# https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/
+
+# 安装 ESP-IDF v4.4 或更高版本
+```
+
+**步骤 2：配置项目**
+
+```bash
+# 进入固件目录
+cd firmware
+
+# 使用 menuconfig 配置项目
+idf.py menuconfig
+```
+
+**步骤 3：编译并烧录**
+
+```bash
+# 编译项目
+idf.py build
+
+# 烧录到 ESP32
+idf.py -p /dev/ttyUSB0 flash
+
+# macOS 用户
+idf.py -p /dev/cu.usbserial-XXXX flash
+
+# Windows 用户
+idf.py -p COM3 flash
+```
+
+**步骤 4：监控串口输出**
+
+```bash
+# 监控串口（波特率：115200）
+idf.py -p /dev/ttyUSB0 monitor
+```
+
+---
+
+### 方法三：使用 esptool.py（仅烧录已编译的固件）
+
+**步骤 1：安装 esptool**
+
+```bash
+# 使用 pip 安装
+pip install esptool
+```
+
+**步骤 2：烧录固件**
+
+```bash
+# 进入固件目录
+cd firmware
+
+# 烧录固件（替换为你的串口和设备地址）
+esptool.py --port /dev/ttyUSB0 --baud 460800 \
+  --before default_reset --after hard_reset write_flash \
+  --flash_mode dio --flash_freq 40m --flash_size detect \
+  0x1000 build/bootloader/bootloader.bin \
+  0x8000 build/partition_table/partition-table.bin \
+  0x10000 build/clockwise.bin
+```
+
+---
+
+## 🌐 配置 WiFi 和时钟
+
+**固件烧录完成后：**
+
+1. **连接 WiFi 热点**
+   - 设备上电后，会创建 WiFi 热点：`Clockwise-XXXX`
+   - 使用手机或电脑连接此热点
+
+2. **打开 Web 设置页面**
+   - 浏览器访问：`192.168.4.1`
+   - 进入时钟配置界面
+
+3. **配置网络和时间**
+   - 选择你的 WiFi 网络
+   - 输入 WiFi 密码
+   - 设置时区
+   - 保存配置
+
+4. **切换语言（中文版特色）**
+   - 在设置页面顶部，点击 🌐 语言切换按钮
+   - 选择 **中文** 或 **English**
+   - 语言偏好会自动保存
+
+---
+
+## 🇨🇳 中文使用说明
+
+### 语言切换
+
+中文版固件在 Web 设置界面添加了语言切换功能：
+
+- **位置**：设置页面顶部导航栏
+- **图标**：🌐 地球图标
+- **支持语言**：中文 / English
+- **保存方式**：自动保存到 localStorage
+
+### 编译中文版固件
+
+```bash
+# 确保使用 cn-version 分支
+git clone -b cn-version https://github.com/Jane84894/clockwise.git
+cd clockwise/firmware
+
+# 编译并烧录
 pio run -t upload
 ```
 
 ### 中文支持详情
 
-- **设置页面** - 完全中文化
-- **状态提示** - 中文显示
-- **错误信息** - 中文显示
-- **语言持久化** - localStorage 保存偏好
+- ✅ **设置页面** - 完全中文化
+- ✅ **状态提示** - 中文显示
+- ✅ **错误信息** - 中文显示
+- ✅ **语言持久化** - localStorage 保存偏好
 
 ---
 
@@ -131,31 +234,42 @@ pio run -t upload
 
 ### 分支说明
 
-- `main` - 原版代码（与上游同步）
-- `cn-version` - **中文版本**（推荐使用）
-- `gh-pages` - 项目官网
+| 分支 | 用途 | 说明 |
+|------|------|------|
+| `main` | 📖 文档 + 与上游同步 | 默认分支，包含中文 README |
+| `cn-version` | 💻 中文版本代码 | 中文语言支持实现 |
+| `gh-pages` | 🌐 项目官网 | 原作者维护 |
+
+### 推荐开发流程
+
+```bash
+# 1. 克隆中文版仓库
+git clone -b cn-version https://github.com/Jane84894/clockwise.git
+cd clockwise
+
+# 2. 开发你的修改
+# 在 firmware 目录下进行修改
+
+# 3. 编译测试
+cd firmware
+pio run
+
+# 4. 提交你的贡献
+git add .
+git commit -m "feat: 你的修改说明"
+git push origin cn-version
+```
 
 ### 贡献代码
 
 欢迎提交 Issue 和 Pull Request！
 
-### 本地化 (i18n)
-
-中文语言支持通过以下方式实现：
-
-```javascript
-// 语言包
-const translations = {
-  zh: { /* 中文翻译 */ },
-  en: { /* English translations */ }
-};
-
-// 切换语言
-function setLanguage(lang) {
-  localStorage.setItem('preferredLanguage', lang);
-  // 更新 UI
-}
-```
+**贡献指南：**
+1. Fork 本仓库
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
 
 ---
 
@@ -180,7 +294,7 @@ function setLanguage(lang) {
 
 - **项目地址**: https://github.com/Jane84894/clockwise
 - **原版项目**: https://github.com/jnthas/clockwise
-- **在线烧录**: https://clockwise.page
+- **Issues**: https://github.com/Jane84894/clockwise/issues
 
 ---
 
